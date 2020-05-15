@@ -1,7 +1,5 @@
 #include "stl.h"
 
-#include <algorithm>
-#include <assert.h>
 #include <execution>
 
 namespace execution = std::execution;
@@ -52,7 +50,7 @@ void sanity_check() {
   FromBytes p1{0xEF, 0xBE, 0xAD, 0xDE, 0xEF, 0xBE, 0xAD, 0xDE};
   FromBytes c1{0xB5, 0x8C, 0xF2, 0xFA, 0xE0, 0xC0, 0x40, 0x09};
 
-  std::cout << "\n\nChecking STL XTEA...\n";
+  std::cout << "Checking std::execution::par XTEA...\n";
   assert(encrypt({p1.block}, k1)[0] == c1.block);
   assert(decrypt({c1.block}, k1)[0] == p1.block);
 }

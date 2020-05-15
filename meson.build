@@ -1,13 +1,12 @@
 project('xtea-flavors', 'cpp',
     license: [ 'mit' ],
-    default_options: [ 'cpp_std=c++17' ]
+    default_options: [ 'b_lto=true', 'cpp_std=c++17' ]
 )
 
-headers = files('base.h', 'ocl.h', 'ref.h', 'stl.h')
-sources = files('ocl.cpp', 'ref.cpp', 'stl.cpp', 'main.cpp')
+headers = files('base.h', 'avx.h', 'ocl.h', 'ref.h', 'stl.h')
+sources = files('avx.cpp', 'ocl.cpp', 'ref.cpp', 'stl.cpp', 'main.cpp')
 
 opencl_dep = dependency('OpenCL')
-openmp_dep = dependency('OpenMP')
 tbb_dep = dependency('TBB')
 
 run_target('format',
@@ -15,5 +14,8 @@ run_target('format',
 )
 
 xtea_flavors = executable('xtea-flavors', sources, 
-    dependencies : [opencl_dep, openmp_dep, tbb_dep]
+    cpp_args: '-march=native',
+    #cpp_args: ['-march=native', '-fdata-sections', '-ffunction-sections', '-fno-plt', '-fvisibility=hidden'],
+    link_args: '-Wl,--sort-common,-z,relro,-z,now',
+    dependencies : [opencl_dep, tbb_dep]
 )

@@ -7,12 +7,6 @@
 #include <boost/compute/container/vector.hpp>
 #include <boost/compute/types/builtin.hpp>
 
-#include <algorithm>
-#include <array>
-#include <assert.h>
-#include <iostream>
-#include <vector>
-
 namespace compute = boost::compute;
 
 namespace xtea {
@@ -21,14 +15,12 @@ namespace ocl {
 auto encrypt(Data in, const compute::uint4_ &k) {
   BOOST_COMPUTE_CLOSURE(uint64_t, encrypt_block, (uint64_t data), (k, delta), {
     unsigned left = data, right = data >> 32;
-
-    unsigned sum = 0;
-    for (int i = 0; i < 32; ++i) {
+    for (int i = 0, sum = 0, next_sum = delta; i < 32;
+         ++i, sum = next_sum, next_sum += delta) {
       left += ((right << 4 ^ right >> 5) + right) ^ (sum + k[sum & 3]);
-      sum += delta;
-      right += ((left << 4 ^ left >> 5) + left) ^ (sum + k[(sum >> 11) & 3]);
+      right += ((left << 4 ^ left >> 5) + left) ^
+               (next_sum + k[(next_sum >> 11) & 3]);
     }
-
     return ((unsigned long long)right) << 32 | left;
   });
 
@@ -41,14 +33,12 @@ auto encrypt(Data in, const compute::uint4_ &k) {
 auto decrypt(Data in, const compute::uint4_ &k) {
   BOOST_COMPUTE_CLOSURE(uint64_t, decrypt_block, (uint64_t data), (k, delta), {
     unsigned left = data, right = data >> 32;
-
-    unsigned sum = delta * 32;
-    for (int i = 0; i < 32; ++i) {
+    for (int i = 0, sum = delta * 32, next_sum = sum - delta; i < 32;
+         ++i, sum = next_sum, next_sum -= delta) {
       right -= ((left << 4 ^ left >> 5) + left) ^ (sum + k[(sum >> 11) & 3]);
-      sum -= delta;
-      left -= ((right << 4 ^ right >> 5) + right) ^ (sum + k[sum & 3]);
+      left -=
+          ((right << 4 ^ right >> 5) + right) ^ (next_sum + k[next_sum & 3]);
     }
-
     return ((unsigned long long)right) << 32 | left;
   });
 
@@ -65,7 +55,7 @@ void sanity_check() {
   FromBytes p1{0xEF, 0xBE, 0xAD, 0xDE, 0xEF, 0xBE, 0xAD, 0xDE};
   FromBytes c1{0xB5, 0x8C, 0xF2, 0xFA, 0xE0, 0xC0, 0x40, 0x09};
 
-  std::cout << "\n\nChecking OpenCL XTEA...\n";
+  std::cout << "Checking OpenCL XTEA...\n";
 
   try {
     assert(encrypt({p1.block}, k1)[0] == c1.block);
